@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+</head>
+<body>
+<div id="formLogin">
+    <button onclick="showFormLogin()">Login</button>
+</div>
+<div>
+    <button id="bt_showListAdmin">Show admin list</button>
+    <button id="bt_showListUser">Show user list</button>
+    <table id="listUser" border="1px solid" hidden width="50%"></table>
+</div>
+<script>
+    $("#bt_showListAdmin").click(function () {
+        $("#listUser").show();
+        getInfoAdmin();
+    })
+
+    $("#bt_showListUser").click(function () {
+        $("#listUser").show();
+        getInfoUser();
+    })
+
+    $("#bt_showList").dblclick(function () {
+        $("#listUser").hide();
+    })
+
+    function showFormLogin() {
+        document.getElementById("formLogin").innerHTML = `<input type="text" id="username" placeholder="Username">
+            <br/>
+            <input type="password" id="password" placeholder="Password">
+                <br/>
+                <button onClick="login()">Login</button>`
+    }
+
+
+    function getInfoAdmin() {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/admin",
+            headers: {"Authorization": 'Bearer ' + localStorage.getItem("token")},
+            success: function (data) {
+                console.log(data)
+                let content = `<caption><h2>User list</h2></caption>
+    <tr>
+        <th>Id</th>
+        <th>Username</th>
+        <th>Password</th>
+        <th>Full Name</th>
+        <th>Role</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>`;
+                for (let i = 0; i < data.length; i++) {
+                    content += `<tr>
+            <td>${data[i].id}</td>
+        <td>${data[i].username}</td>
+        <td>${data[i].password}</td>
+        <td>${data[i].fullName}</td>
+        <td>` + getRole(data[i].roles) + `</td>
+        <td> <input type="submit" value="Edit" onclick="viewDetail(${data[i].id})"/> </td>
+        <td><input type="submit" value="Delete" onclick="deleteProduct(${data[i].id})" id="delete${data[i].id}"/></td>
+    </tr>`;
+                }
+                $("#listUser").html(content);
+            }
+        })
+    }
+
+    function getRole(data) {
+        let str = "";
+        for (let i = 0; i < data.length; i++) {
+            str += data[i].name + '\n';
+        }
+        return str;
+    }
+
+    function login() {
+        let username = $("#username").val();
+        let password = $("#password").val();
+        let user = {
+            "username": username,
+            "password": password
+        }
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-type': 'application/json'
+            },
+            type: "POST",
+            url: "http://localhost:8080/api/login",
+            data: JSON.stringify(user),
+            success: function (data) {
+                document.getElementById("formLogin").innerHTML = `<button onclick="logout()">Logout</button>`;
+                localStorage.setItem('token', data.token)
+            }
+        })
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        document.getElementById("listUser").innerHTML = "";
+        showFormLogin();
+
+    }
+
+    function getInfoUser() {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/user",
+            headers: {"Authorization": 'Bearer ' + localStorage.getItem("token")},
+            success: function (data) {
+                console.log(data);
+                let content = `<caption><h2>Product list</h2></caption>
+    <tr>
+        <th>Username</th>
+        <th>Fullname</th>
+        <th>View</th>
+    </tr>`;
+                for (let i = 0; i < data.length; i++) {
+                    content += `<tr>
+        <td>${data[i].username}</td>
+        <td>${data[i].fullName}</td>
+        <td> <input type="submit" value="Edit" onclick="viewDetail(${data[i].id})"/> </td>
+    </tr>`;
+                }
+                $("#listUser").html(content);
+            }
+        })
+    }
+</script>
+</body>
+</html>
